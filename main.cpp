@@ -1,10 +1,37 @@
-#include <iostream>
+#include <iostream>	//C++ Includes
 #include <list>
 #include <math.h>
-#include <Point.h>
+
+#include <Point.h>	//Project Specific Includes
 #include <rect.cpp>
 
+//#include <glad/glad.h>
+
+
+ //NanoGUI Includes
+
+#include <nanogui/screen.h>
+#include <nanogui/window.h>
+#include <nanogui/layout.h>
+#include <nanogui/button.h>
+#include <nanogui/glutil.h>
+#include <nanogui/label.h>
+#include <nanogui/theme.h>
+#include <nanogui/formhelper.h>
+#include <nanogui/slider.h>
+
 using namespace std;
+
+
+using nanogui::Screen;
+using nanogui::Window;
+using nanogui::GroupLayout;
+using nanogui::Button;
+using nanogui::Vector2f;
+using nanogui::MatrixXu;
+using nanogui::MatrixXf;
+using nanogui::Label;
+
 using std::list;
 //using std::list<int>::iterator;
 
@@ -16,6 +43,7 @@ bool ptInRadius(point* thePt, double rad) {
 		return false;
 }
 
+// Function to find all the rectangles in the circle
 list<rect> findRectangles(double radius, double x_pitch, double y_pitch){
 	point* startPoint = new point(((int)(radius / x_pitch) + 1.0) * -x_pitch,
 		((int)(radius / y_pitch) + 1.0) * y_pitch);	// Furthest Upper Left Point to search
@@ -49,6 +77,19 @@ list<rect> findRectangles(double radius, double x_pitch, double y_pitch){
 	return rectList;
 }
 
+class drawWindow : public nanogui::Screen {
+public:
+	drawWindow() : nanogui::Screen(Eigen::Vector2i(500, 500), "Wafer Map") {
+		using namespace nanogui;
+		Window* window = new Window(this);
+		window->setTitle("Window");
+	}
+
+private:
+
+
+};
+
 int main() {
 	double radius = 50;		// Radius around area of interest
 	double x_pitch = 30;	// Rectangle spacing in x direction	
@@ -69,9 +110,18 @@ int main() {
 		cout << "(" << ptList[3].getX() << ", " << ptList[3].getY() << ")\n";
 
 	}
-
-
-	int nothing;
-	cin >> nothing;
+	
+	nanogui::init();
+	
+	nanogui::Screen* screen = new drawWindow();
+	screen->performLayout();
+	screen->drawAll();
+	screen->setVisible(true);
+	
+	nanogui::mainloop();
+	nanogui::shutdown();
+	
+	int junk;
+	cin >> junk;
 	return 0;
 }
