@@ -5,12 +5,7 @@
 #include <Point.h>	//Project Specific Includes
 #include <rect.cpp>
 
-//#include <glad/glad.h>
-
-
- //NanoGUI Includes
-
-#include <nanogui/screen.h>
+#include <nanogui/screen.h>	//NanoGUI Includes
 #include <nanogui/window.h>
 #include <nanogui/layout.h>
 #include <nanogui/button.h>
@@ -21,8 +16,7 @@
 #include <nanogui/slider.h>
 
 using namespace std;
-
-
+/*
 using nanogui::Screen;
 using nanogui::Window;
 using nanogui::GroupLayout;
@@ -31,7 +25,7 @@ using nanogui::Vector2f;
 using nanogui::MatrixXu;
 using nanogui::MatrixXf;
 using nanogui::Label;
-
+*/
 using std::list;
 //using std::list<int>::iterator;
 
@@ -77,23 +71,70 @@ list<rect> findRectangles(double radius, double x_pitch, double y_pitch){
 	return rectList;
 }
 
-class drawWindow : public nanogui::Screen {
+//mapWindow is used for drawing wafer map, always has circular wafer drawn in background
+// has rectangular die drawn on top.
+class mapWindow : public nanogui::Screen {
 public:
-	drawWindow() : nanogui::Screen(Eigen::Vector2i(500, 500), "Wafer Map") {
+	mapWindow() : nanogui::Screen(Eigen::Vector2i(500, 500), "Wafer Map"), myRadius(100) {
 		using namespace nanogui;
-		Window* window = new Window(this);
-		window->setTitle("Window");
+		setBackground(Color((int)255, (int)255, (int)255, (int)0));	// Window Background
 	}
 
+	void changeRadius(double inRad) { myRadius = inRad; }
+
+	void setRects(list<rect> newRects) { myRect = newRects; }
+
+	void drawContents() {
+		// Get size of drawing area in pixels
+		glfwGetWindowSize(glfwWindow(), &screenWindowHeight, &screenWindowWidth);
+		
+		// windowHeight compensates for pixel scaling on high dpi screens, as
+		// nanogui seems to work with the assumption of 96dpi regardless
+		// of actual screen resolution.
+		windowHeight = screenWindowHeight / pixelRatio();
+		windowWidth = screenWindowWidth / pixelRatio();
+		
+		// Find a scaling factor so that the circle will occupy 90% of available area
+		if (windowHeight < windowWidth)
+			scaleFactor = (windowHeight*0.9) / (2*myRadius);
+		else
+			scaleFactor = (windowWidth*0.9) / (2*myRadius);
+		
+		// Draw the base circle
+		NVGcontext* vg = nvgContext();
+		nvgTranslate(vg, windowHeight/2, windowWidth/2);
+		nvgBeginPath(vg);
+		nvgEllipse(vg, 0, 0, myRadius*scaleFactor, myRadius*scaleFactor);
+		nvgFillColor(vg, nvgRGBA(128, 128, 128, 255));
+		nvgFill(vg);
+		for (rects = myRect.begin(); rects != myRect.end(); rects++)
+		{
+			ptList = rects->getPts();
+			nvgBeginPath(vg);
+			nvgRect(vg, (ptList[0].getX()*scaleFactor)+2, 
+						(ptList[0].getY()*scaleFactor)-2, 
+						((ptList[2].getX()-ptList[0].getX())*scaleFactor)-1,
+						((ptList[2].getY()-ptList[0].getY())*scaleFactor)+1);
+			nvgFillColor(vg, nvgRGBA(210, 0, 0, 180));
+			nvgFill(vg);
+		}
+
+	}
 private:
-
-
+	GLFWvidmode return_struct;
+	double scaleFactor;
+	double myRadius;
+	int screenWindowHeight, screenWindowWidth;
+	double windowHeight, windowWidth;
+	std::list<rect>::iterator rects;
+	list<rect> myRect;
+	point* ptList;
 };
 
 int main() {
-	double radius = 50;		// Radius around area of interest
-	double x_pitch = 30;	// Rectangle spacing in x direction	
-	double y_pitch = 11;	// Rectangle spacing in y direction
+	double radius = 100;	// Radius around area of interest
+	double x_pitch = 25;	// Rectangle spacing in x direction	
+	double y_pitch = 4;	// Rectangle spacing in y direction
 
 	std::list<rect>::iterator rects;
 
@@ -113,15 +154,14 @@ int main() {
 	
 	nanogui::init();
 	
-	nanogui::Screen* screen = new drawWindow();
-	screen->performLayout();
-	screen->drawAll();
-	screen->setVisible(true);
-	
+	mapWindow* viewScreen = new mapWindow();
+	viewScreen->performLayout();
+	viewScreen->drawAll();
+	viewScreen->setVisible(true);
+	viewScreen->changeRadius(radius);
+	viewScreen->setRects(rectList);
 	nanogui::mainloop();
 	nanogui::shutdown();
 	
-	int junk;
-	cin >> junk;
 	return 0;
 }
