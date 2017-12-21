@@ -78,6 +78,32 @@ public:
 	mapWindow() : nanogui::Screen(Eigen::Vector2i(500, 500), "Wafer Map"), myRadius(100) {
 		using namespace nanogui;
 		setBackground(Color((int)255, (int)255, (int)255, (int)0));	// Window Background
+
+		// Floating Control Box
+		Window* window = new Window(this);
+		window->setTitle("Options");
+		window->setLayout(new GroupLayout());
+		window->setPosition(Vector2i(15, 15));
+
+		Widget *panel = new Widget(window);
+		panel->setLayout(new BoxLayout(Orientation::Vertical,
+			Alignment::Middle, 0, 20));
+
+		TextBox *textBoxWidth = new TextBox(panel);
+		/* FP widget */ {
+			new Label(panel, "Width :", "sans-bold");
+			textBoxWidth = new TextBox(panel);
+			textBoxWidth->setEditable(true);
+			textBoxWidth->setFixedSize(Vector2i(100, 20));
+			textBoxWidth->setValue("50");
+			textBoxWidth->setUnits("mm");
+			textBoxWidth->setDefaultValue("0.0");
+			textBoxWidth->setFontSize(16);
+			textBoxWidth->setFormat("[-]?[0-9]*\\.?[0-9]+");
+		}
+
+
+		Button* apply = new Button(window, "Apply");
 	}
 
 	void changeRadius(double inRad) { myRadius = inRad; }
@@ -129,12 +155,35 @@ private:
 	std::list<rect>::iterator rects;
 	list<rect> myRect;
 	point* ptList;
+	double inputDiameter, inputWidth, inputHeight;	//User input variables
 };
 
+/*
+class settingWindow : public nanogui::Screen {
+public:
+	settingWindow() : nanogui::Screen(Eigen::Vector2i(300, 500), "Settings") {
+		using namespace nanogui;
+		setBackground(Color((int)255, (int)255, (int)255, (int)0));	// Window Background
+	}
+
+private:
+	void addVariableSlider(Widget* parent, float& var, const std::string& fieldName, const std::function<void(float)>& lambda = [](float value) {}) {
+		using namespace nanogui;
+		Label* label = new Label(parent, fieldName);
+		Slider* slider = new Slider(parent);
+		slider->setFixedWidth(80);
+		slider->setValue(var);
+		slider->setCallback([&var, lambda](float value) {
+			var = value;
+			lambda(value);
+		});
+	}
+};
+*/
 int main() {
 	double radius = 100;	// Radius around area of interest
-	double x_pitch = 25;	// Rectangle spacing in x direction	
-	double y_pitch = 4;	// Rectangle spacing in y direction
+	double x_pitch = 10;	// Rectangle spacing in x direction	
+	double y_pitch = 35;	// Rectangle spacing in y direction
 
 	std::list<rect>::iterator rects;
 
@@ -160,6 +209,13 @@ int main() {
 	viewScreen->setVisible(true);
 	viewScreen->changeRadius(radius);
 	viewScreen->setRects(rectList);
+
+	/*
+	settingWindow* ctrlBox = new settingWindow();
+	ctrlBox->performLayout();
+	ctrlBox->drawAll();
+	ctrlBox->setVisible(true);
+	*/
 	nanogui::mainloop();
 	nanogui::shutdown();
 	
